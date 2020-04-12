@@ -1,0 +1,7 @@
+<metadata>
+	<name>Cloudup</name>
+	<version>1.0.0</version>
+	<icon>./assets/icon.png</icon>
+	<shortname>Cloudup</shortname>
+	<className>Cloudup</className>
+</metadata>
