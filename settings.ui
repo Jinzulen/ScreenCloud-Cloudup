@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<ui version="4.0">
+    <class>Dialog</class>
+
+    <widget class="QDialog" name="Dialog">
+        <property name="geometry">
+            <rect>
+                <x>0</x>
+                <y>0</y>
+                <width>308</width>
+                <height>306</height>
+            </rect>
+        </property>
+
+        <property name="windowTitle">
+            <string>Cloudup - Settings</string>
+        </property>
+
+        <layout class="QVBOXLayout" name="verticalLayout">
+            <!-- Cloudup Account -->
+            <item>
+                <widget class="QGroupBox" name="group_account">
+                    <property name="title">
+                        <string>Account</string>
+                    </property>
+
+                    <layout class="QVBoxLayout" name="verticaLayout_1">
+                        <item>
+                            <layout class="QFormLayout" name="formLayout">
+                                <!-- Username -->
+                                <item row="1" column="0">
+                                    <widget class="QLabel" name="label_username">
+                                        <property name="text">
+                                            <string>Username:</string>
+                                        </property>
+                                    </widget>
+                                </item>
+
+                                <item row="1" column="1">
+                                    <widget class="QLineEdit" name="input_username" />
+                                </item>
+
+                                <!-- Password -->
+                                <item row="2" column="0">
+                                    <widget class="QLabel" name="label_password">
+                                        <property name="text">
+                                            <string>Password:</string>
+                                        </property>
+                                    </widget>
+                                </item>
+
+                                <item row="2" column="1">
+                                    <widget class="QLineEdit" name="input_password">
+                                        <property name="echoMode">
+                                            <enum>QLineEdit::Password</enum>
+                                        </property>
+                                    </widget>
+                                </item>
+                            </layout>
+                        </item>
+                    </layout>
+                </widget>
+            </item>
+
+            <!-- Upload Configuration -->
+            <item>
+                <widget class="QGroupBox" name="group_upload">
+                    <property name="title">
+                        <string>Upload Configuration</string>
+                    </property>
+
+                    <layout class="QVBoxLayout" name="vericalLayout_2">
+                        <item>
+                            <layout class="QFormLayout" name="formLayout_2">
+                                <property name="fieldGrowthPolicy">
+                                    <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                                </property>
+
+                                <!-- Image title -->
+                                <item row="1" column="0">
+                                    <widget class="QLabel" name="label_name">
+                                        <property name="text">
+                                            <string>Title:</string>
+                                        </property>
+                                    </widget>
+                                </item>
+
+                                <item row="1" column="1">
+                                    <widget class="QLineEdit" name="input_name">
+                                        <property name="text">
+                                            <string extracomment="Hlap" />
+                                        </property>
+                                    </widget>
+                                </item>
+
+                                <!-- Title result -->
+                                <item row="2" column="0">
+                                    <widget class="QLabel" name="label_result">
+                                        <property name="text">
+                                            <string>Result:</string>
+                                        </property>
+                                    </widget>
+                                </item>
+
+                                <item row="2" column="1">
+                                    <widget class="QLabel" name="label_example">
+                                        <property name="text">
+                                            <string>example</string>
+                                        </property>
+                                    </widget>
+                                </item>
+                            </layout>
+                        </item>
+                    </layout>
+                </widget>
+            </item>
+
+            <!-- Clipboard -->
+            <item>
+                <widget class="QGroupBox" name="group_clipboard">
+                    <property name="title">
+                        <string>Clipboard</string>
+                    </property>
+
+                    <layout class="QVBOXLayout" name="verticalLayout_3">
+                        <!-- Cloudup Link -->
+                        <item>
+                            <widget class="QRadioButton" name="radio_cloudup">
+                                <property name="text">
+                                    <string>Copy Cloudup link</string>
+                                </property>
+
+                                <property name="checked">
+                                    <bool>true</bool>
+                                </property>
+                            </widget>
+                        </item>
+
+                        <!-- Direct Link -->
+                        <item>
+                            <widget class="QRadioButton" name="radio_direct">
+                                <property name="text">
+                                    <string>Copy direct link</string>
+                                </property>
+                            </widget>
+                        </item>
+
+                        <!-- Don't copy anything -->
+                        <item>
+                            <widget class="QRadioButton" name="radio_nothing">
+                                <property name="text">
+                                    <string>Don't copy link</string>
+                                </property>
+                            </widget>
+                        </item>
+                    </layout>
+                </widget>
+            </item>
+
+            <!-- Confirmation. -->
+            <item>
+                <widget class="QDialogButtonBox" name="buttonBox">
+                    <property name="orientation">
+                        <enum>Qt::Horizontal</enum>
+                    </property>
+
+                    <property name="standardButtons">
+                        <set>QDialogButtonBox::Cancel|QDialogButtonBox::Save</set>
+                    </property>
+                </widget>
+            </item>
+        </layout>
+    </widget>
+
+    <!-- Don't switch tabs when these are present. -->
+    <tabstops>
+        <tabstop>input_username</tabstop>
+        <tabstop>input_password</tabstop>
+        <tabstop>input_name</tabstop>
+        <tabstop>radio_cloudup</tabstop>
+        <tabstop>radio_direct</tabstop>
+        <tabstop>radio_nothing</tabstop>
+        <tabstop>buttonBox</tabstop>
+    </tabstops>
+
+    <resources/>
+
+    <connections>
+        <connection>
+            <sender>buttonBox</sender>
+            <signal>accepted()</signal>
+            <receiver>Dialog</receiver>
+            <slot>accept()</slot>
+
+            <hints>
+                <hint type="sourceLabel">
+                    <x>236</x>
+                    <y>299</y>
+                </hint>
+
+                <hint type="destinationLabel">
+                    <x>157</x>
+                    <y>274</y>
+                </hint>
+            </hints>
+        </connection>
+
+        <connection>
+            <sender>buttonBox</sender>
+            <signal>rejected()</signal>
+            <receiver>Dialog</receiver>
+            <slot>reject()</slot>
+
+            <hints>
+                <hint type="sourceLabel">
+                    <x>286</x>
+                    <y>299</y>
+                </hint>
+
+                <hint type="destinationLabel">
+                    <x>286</x>
+                    <y>274</y>
+                </hint>
+            </hints>
+        </connection>
+    </connections>
+</ui>
