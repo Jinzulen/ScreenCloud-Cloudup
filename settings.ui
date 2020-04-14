@@ -13,11 +13,18 @@
             </rect>
         </property>
 
+        <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+            </sizepolicy>
+        </property>
+
         <property name="windowTitle">
             <string>Cloudup - Settings</string>
         </property>
 
-        <layout class="QVBOXLayout" name="verticalLayout">
+        <layout class="QVBoxLayout" name="verticalLayout">
             <!-- Cloudup Account -->
             <item>
                 <widget class="QGroupBox" name="group_account">
@@ -123,7 +130,7 @@
                         <string>Clipboard</string>
                     </property>
 
-                    <layout class="QVBOXLayout" name="verticalLayout_3">
+                    <layout class="QVBoxLayout" name="verticalLayout_3">
                         <!-- Cloudup Link -->
                         <item>
                             <widget class="QRadioButton" name="radio_cloudup">
@@ -173,7 +180,6 @@
         </layout>
     </widget>
 
-    <!-- Don't switch tabs when these are present. -->
     <tabstops>
         <tabstop>input_username</tabstop>
         <tabstop>input_password</tabstop>
