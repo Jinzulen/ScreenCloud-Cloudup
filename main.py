@@ -1,3 +1,5 @@
+import json
+import requests
 import ScreenCloud
 
 from PythonQt.QtUiTools import QUiLoader
@@ -44,17 +46,21 @@ class Cloudup:
     def showSettingsUI(self, parentWidget):
         self.settingsDialog = QUiLoader().load(QFile(workingDir + "/settings.ui"), parentWidget)
 
-        # Inject the image title format
+        # Inject the image title format.
         self.settingsDialog.group_upload.input_name.connect("textChanged(QString)", self.nameFormatEdited)
         self.settingsDialog.connect("accepted()", self.saveSettings)
 
-        # Inject default values
+        # Inject default values.
         self.settingsDialog.group_upload.input_name.text      = self.Format
         self.settingsDialog.group_account.input_username.text = self.Username
         self.settingsDialog.group_account.input_password.text = self.Password
 
         self.settingsDialog.group_clipboard.radio_direct.setChecked(not self.copyDirect)
         self.settingsDialog.group_clipboard.radio_nothing.setChecked(not self.copyNothing)
+
+        # Wait for login/out button activation.
+        self.settingsDialog.group_account.widget_loggedIn.connect("clicked()", self.Logout)
+        self.settingsDialog.group_account.button_authenticate.connect("clicked()", self.Login)
 
         self.updateUi()
         self.settingsDialog.open()
@@ -74,6 +80,7 @@ class Cloudup:
         self.Format = Settings.value("name-format", "Screenshot at %H-%M-%S")
 
         # Clipboard
+        self.copyCloudup = Settings.value("copy-cloudup", "true") in ["true", True]
         self.copyDirect  = Settings.value("copy-direct", "true") in ["true", True]
         self.copyNothing = Settings.value("copy-nothing", "true") in ["true", True]
 
@@ -82,7 +89,7 @@ class Cloudup:
 
     def saveSettings(self):
         Settings = QSettings()
-        
+
         Settings.beginGroup("uploaders")
         Settings.beginGroup("cloudup")
 
@@ -94,6 +101,7 @@ class Cloudup:
         Settings.setValue("name-format", self.settingsDialog.group_upload.input_name.text)
 
         # Clipboard
+        Settings.setValue("copy-cloudup", not self.settingsDialog.group_clipboard.radio_cloudup.checked)
         Settings.setValue("copy-direct", not self.settingsDialog.group_clipboard.radio_direct.checked)
         Settings.setValue("copy-nothing", not self.settingsDialog.group_clipboard.radio_nothing.checked)
 
@@ -105,6 +113,48 @@ class Cloudup:
 
     def nameFormatEdited(self, nameFormat):
         self.settingsDialog.group_upload.label_example.setText(ScreenCloud.formatFilename(nameFormat))
+
+    # Login.
+    def Login(self):
+        self.saveSettings()
+
+        # Backslashes throw invalid credentials error.
+        Password = self.Password.replace("\\", "\\\\")
+
+        # Headers and payload.
+        Headers = {"User-Agent": "ScreenCloud-Cloudup"}
+        Payload = {"client_id": "ah5Oa7F3hT8", "grant_type": "password", "username": self.Username, "password": f"{self.Password}"}
+
+        try:
+            r = requests.post("https://cloudup.com/oauth/access_token", data = Payload, headers = Headers)
+            j = json.loads(r.text)
+
+            if r.status_code == 400:
+                QMessageBox.critical(self.settingsDialog, "Cloudup Login Error", j["error_description"])
+
+            self.Key = j["access_token"]
+
+            self.saveSettings()
+            self.updateUi()
+        except Exception as e:
+            QMessageBox.critical(self.settingsDialog, "Cloudup Login Error", "Error occurred during login. " + e.message)
+
+    # Logout.
+    def Logout(self):
+        Settings = QSettings()
+
+        Settings.beginGroup("uploaders")
+        Settings.beginGroup("cloudup")
+
+        Settings.remove("token")
+        Settings.remove("username")
+        Settings.remove("password")
+
+        Settings.endGroup()
+        Settings.endGroup()
+
+        self.loadSettings()
+        self.updateUi()
 
     def isConfigured(self):
         return not(not self.Username or not self.Password)
