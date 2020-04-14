@@ -66,6 +66,51 @@
                                 </item>
                             </layout>
                         </item>
+
+                        <!-- Logged in user -->
+                        <item>
+                            <widget class="QWidget" name="widget_user" native="true">
+                                <layout class="QFormLayout" name="form_user">
+                                    <item row="0" column="0">
+                                        <widget class="QLabel" name="label_user">
+                                            <property name="text">
+                                                <string>Logged in:</string>
+                                            </property>
+                                        </widget>
+                                    </item>
+
+                                    <item row="0" column="1">
+                                        <widget class="QLabel" name="label_username">
+                                            <property name="text">
+                                                <string>Loading...</string>
+                                            </property>
+                                        </widget>
+                                    </item>
+                                </layout>
+                            </widget>
+                        </item>
+
+                        <!-- Login button -->
+                        <item>
+                            <widget class="QPushButton" name="button_authenticate">
+                                <property name="text">
+                                    <string>Login</string>
+                                </property>
+
+                                <property name="checkable">
+                                    <bool>false</bool>
+                                </property>
+                            </widget>
+                        </item>
+
+                        <!-- Logout button -->
+                        <item>
+                            <widget class="QPushButton" name="widget_loggedIn" native="true">
+                                <property name="text">
+                                    <string>Logout</string>
+                                </property>
+                            </widget>
+                        </item>
                     </layout>
                 </widget>
             </item>
