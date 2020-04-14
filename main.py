@@ -1,10 +1,11 @@
+import time
 import json
 import requests
 import ScreenCloud
 
 from PythonQt.QtUiTools import QUiLoader
-from PythonQt.QtCore import QFile, QSettings
-from PythonQt.QtGui import QFont, QWidget, QDialog, QMessageBox
+from PythonQt.QtCore import QFile, QSettings, QStandardPaths
+from PythonQt.QtGui import QFont, QWidget, QDialog, QDesktopServices, QMessageBox
 
 class Cloudup:
     def __init__(self):
@@ -37,6 +38,12 @@ class Cloudup:
             self.settingsDialog.group_account.widget_user.hide()
             self.settingsDialog.group_account.widget_loggedIn.hide()
             self.settingsDialog.group_account.button_authenticate.show()
+
+            self.settingsDialog.group_account.label_username.show()
+            self.settingsDialog.group_account.input_username.show()
+
+            self.settingsDialog.group_account.label_password.show()
+            self.settingsDialog.group_account.input_password.show()
         
         # Inject the default image title into the name field.
         self.settingsDialog.group_upload.input_name.setText(self.Format)
@@ -51,6 +58,8 @@ class Cloudup:
         self.settingsDialog.connect("accepted()", self.saveSettings)
 
         # Inject default values.
+        self.loadSettings()
+
         self.settingsDialog.group_upload.input_name.text      = self.Format
         self.settingsDialog.group_account.input_username.text = self.Username
         self.settingsDialog.group_account.input_password.text = self.Password
@@ -118,12 +127,13 @@ class Cloudup:
     def Login(self):
         self.saveSettings()
 
-        # Backslashes throw invalid credentials error.
-        Password = self.Password.replace("\\", "\\\\")
+        # Grab credentials from the currently available fields, not saved settings.
+        Username = self.settingsDialog.group_account.input_username.text
+        Password = self.settingsDialog.group_account.input_password.text
 
         # Headers and payload.
         Headers = {"User-Agent": "ScreenCloud-Cloudup"}
-        Payload = {"client_id": "ah5Oa7F3hT8", "grant_type": "password", "username": self.Username, "password": f"{self.Password}"}
+        Payload = {"client_id": "ah5Oa7F3hT8", "grant_type": "password", "username": Username, "password": f"{Password}"}
 
         try:
             r = requests.post("https://cloudup.com/oauth/access_token", data = Payload, headers = Headers)
@@ -135,9 +145,10 @@ class Cloudup:
             self.Key = j["access_token"]
 
             self.saveSettings()
-            self.updateUi()
         except Exception as e:
             QMessageBox.critical(self.settingsDialog, "Cloudup Login Error", "Error occurred during login. " + e.message)
+        
+        self.updateUi()
 
     # Logout.
     def Logout(self):
@@ -157,4 +168,4 @@ class Cloudup:
         self.updateUi()
 
     def isConfigured(self):
-        return not(not self.Username or not self.Password)
+        return not(not self.Key)
