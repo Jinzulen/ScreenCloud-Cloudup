@@ -1,7 +1,4 @@
-import time
-import json
-import requests
-import ScreenCloud
+import os, time, json, requests, mimetypes, ScreenCloud
 
 from PythonQt.QtUiTools import QUiLoader
 from PythonQt.QtCore import QFile, QSettings, QStandardPaths
@@ -103,6 +100,7 @@ class Cloudup:
         Settings.beginGroup("cloudup")
 
         # Account
+        Settings.setValue("token", self.Key)
         Settings.setValue("username", self.settingsDialog.group_account.input_username.text)
         Settings.setValue("password", self.settingsDialog.group_account.input_password.text)
 
@@ -145,10 +143,9 @@ class Cloudup:
             self.Key = j["access_token"]
 
             self.saveSettings()
+            self.updateUi()
         except Exception as e:
             QMessageBox.critical(self.settingsDialog, "Cloudup Login Error", "Error occurred during login. " + e.message)
-        
-        self.updateUi()
 
     # Logout.
     def Logout(self):
@@ -158,8 +155,6 @@ class Cloudup:
         Settings.beginGroup("cloudup")
 
         Settings.remove("token")
-        Settings.remove("username")
-        Settings.remove("password")
 
         Settings.endGroup()
         Settings.endGroup()
