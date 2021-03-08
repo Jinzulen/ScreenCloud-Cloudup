@@ -47,6 +47,34 @@ class Cloudup:
 
         self.settingsDialog.adjustSize()
 
+    def getFilename(self):
+        return ScreenCloud.formatFilename(self.Format)
+
+    def nameFormatEdited(self, nameFormat):
+        self.settingsDialog.group_upload.label_example.setText(ScreenCloud.formatFilename(nameFormat))
+
+    def loadSettings(self):
+        Settings = QSettings()
+
+        Settings.beginGroup("uploaders")
+        Settings.beginGroup("cloudup")
+
+        # Account
+        self.Key      = Settings.value("token", "")
+        self.Username = Settings.value("username", "")
+        self.Password = Settings.value("password", "")
+
+        # Image title
+        self.Format = Settings.value("name-format", "Screenshot at %H-%M-%S")
+
+        # Clipboard
+        self.copyCloudup = Settings.value("copy-cloudup", "true") in ["true", True]
+        self.copyDirect  = Settings.value("copy-direct", "true") in ["true", True]
+        self.copyNothing = Settings.value("copy-nothing", "true") in ["true", True]
+
+        Settings.endGroup()
+        Settings.endGroup()
+
     def showSettingsUI(self, parentWidget):
         self.settingsDialog = QUiLoader().load(QFile(workingDir + "/settings.ui"), parentWidget)
 
@@ -71,28 +99,6 @@ class Cloudup:
         self.updateUi()
         self.settingsDialog.open()
 
-    def loadSettings(self):
-        Settings = QSettings()
-
-        Settings.beginGroup("uploaders")
-        Settings.beginGroup("cloudup")
-
-        # Account
-        self.Key      = Settings.value("token", "")
-        self.Username = Settings.value("username", "")
-        self.Password = Settings.value("password", "")
-
-        # Image title
-        self.Format = Settings.value("name-format", "Screenshot at %H-%M-%S")
-
-        # Clipboard
-        self.copyCloudup = Settings.value("copy-cloudup", "true") in ["true", True]
-        self.copyDirect  = Settings.value("copy-direct", "true") in ["true", True]
-        self.copyNothing = Settings.value("copy-nothing", "true") in ["true", True]
-
-        Settings.endGroup()
-        Settings.endGroup()
-
     def saveSettings(self):
         Settings = QSettings()
 
@@ -115,37 +121,41 @@ class Cloudup:
         Settings.endGroup()
         Settings.endGroup()
 
-    def getFilename(self):
-        return ScreenCloud.formatFilename(self.Format)
-
-    def nameFormatEdited(self, nameFormat):
-        self.settingsDialog.group_upload.label_example.setText(ScreenCloud.formatFilename(nameFormat))
-
     # Login.
     def Login(self):
         self.saveSettings()
 
         # Grab credentials from the currently available fields, not saved settings.
-        Username = self.settingsDialog.group_account.input_username.text
-        Password = self.settingsDialog.group_account.input_password.text
+        if self.settingsDialog.group_account:
+            Username = self.settingsDialog.group_account.input_username.text
+            Password = self.settingsDialog.group_account.input_password.text
 
-        # Headers and payload.
-        Headers = {"User-Agent": "ScreenCloud-Cloudup"}
-        Payload = {"client_id": "ah5Oa7F3hT8", "grant_type": "password", "username": Username, "password": f"{Password}"}
+            # Headers and payload.
+            Headers = {"User-Agent": "ScreenCloud-Cloudup"}
 
-        try:
-            r = requests.post("https://cloudup.com/oauth/access_token", data = Payload, headers = Headers)
-            j = json.loads(r.text)
+            Payload = {
+                "client_id": "ah5Oa7F3hT8",
+                "grant_type": "password",
+                "username": Username,
+                "password": Password
+            }
 
-            if r.status_code == 400:
-                QMessageBox.critical(self.settingsDialog, "Cloudup Login Error", j["error_description"])
+            try:
+                r = requests.post("https://cloudup.com/oauth/access_token", data = Payload, headers = Headers)
+                j = json.loads(r.text)
 
-            self.Key = j["access_token"]
+                if r.status_code == 400:
+                    QMessageBox.critical(self.settingsDialog, "Cloudup Login Error", j["error_description"])
 
-            self.saveSettings()
-            self.updateUi()
-        except Exception as e:
-            QMessageBox.critical(self.settingsDialog, "Cloudup Login Error", "Error occurred during login. " + e.message)
+                self.Key = j["access_token"]
+
+                self.saveSettings()
+                self.loadSettings()
+                self.updateUi()
+
+                QMessageBox.information(self.settingsDialog, "Success!", "You have successfully signed into your Cloudup account.")
+            except Exception as e:
+                QMessageBox.critical(self.settingsDialog, "Cloudup Login Error", "Error occurred during login. " + e.message)
 
     # Logout.
     def Logout(self):
@@ -161,6 +171,55 @@ class Cloudup:
 
         self.loadSettings()
         self.updateUi()
+
+        QMessageBox.information(self.settingsDialog, "Success!", "You have successfully signed out of your Cloudup account.")
+
+    # UPLOAD!
+    def upload(self, screenshot, name):
+        Headers = {"User-Agent": "ScreenCloud-Cloudup"}
+
+        try:
+            FilePath = QStandardPaths.writableLocation(QStandardPaths.TempLocation) + "/" + ScreenCloud.formatFilename(str(time.time()))
+            screenshot.save(QFile(FilePath), ScreenCloud.getScreenshotFormat())
+
+            # Create stream
+            s = requests.post("https://api.cloudup.com/1/streams?access_token=" + self.Key, data = {"title": name}, headers = Headers)
+            c = s.json()
+
+            # Create item inside the stream
+            i = requests.post("https://api.cloudup.com/1/items?access_token=" + self.Key, data = {"filename": FilePath, "stream_id": c["id"]}, headers = Headers)
+            j = json.loads(i.text)
+
+            # Upload
+            requests.post(j["s3_url"], files = {"file": open(FilePath, "rb")}, data = {
+                "key": j["s3_key"],
+                "acl": "public-read",
+                "policy": j["s3_policy"],
+                "signature": j["s3_signature"],
+                "AWSAccessKeyId": j["s3_access_key"],
+
+                "Content-Type": "image/png",
+                "Content-Length": os.path.getsize(FilePath)
+            }, headers = Headers)
+
+            # Completion signal
+            requests.patch("https://api.cloudup.com/1/items/" + j["id"] + "?access_token=" + self.Key, json.dumps({u"complete": True}), headers = {
+                "Content-Type": "application/json",
+                "User-Agent": "ScreenCloud-Cloudup"
+            })
+
+            # Does the user want the direct link?
+            if self.copyDirect:
+                ScreenCloud.setUrl(j["direct_url"])
+
+            # Does the user want the Cloudup item link?
+            if self.copyCloudup:
+                ScreenCloud.setUrl(j["url"])
+        except requests.exceptions.RequestException as E:
+            ScreenCloud.setError("Failued to upload to Cloudup: " + E.message)
+            return False
+
+        return True
 
     def isConfigured(self):
         return not(not self.Key)
