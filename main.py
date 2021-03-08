@@ -1,4 +1,4 @@
-import os, time, json, requests, mimetypes, ScreenCloud
+import os, time, json, requests, ScreenCloud
 
 from PythonQt.QtUiTools import QUiLoader
 from PythonQt.QtCore import QFile, QSettings, QStandardPaths
@@ -208,13 +208,13 @@ class Cloudup:
                 "User-Agent": "ScreenCloud-Cloudup"
             })
 
-            # Does the user want the direct link?
-            if self.copyDirect:
-                ScreenCloud.setUrl(j["direct_url"])
-
             # Does the user want the Cloudup item link?
             if self.copyCloudup:
                 ScreenCloud.setUrl(j["url"])
+
+            # Does the user want the direct link?
+            if self.copyDirect:
+                ScreenCloud.setUrl(j["direct_url"])
         except requests.exceptions.RequestException as E:
             ScreenCloud.setError("Failued to upload to Cloudup: " + E.message)
             return False
