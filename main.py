@@ -41,6 +41,10 @@ class Cloudup:
 
             self.settingsDialog.group_account.label_password.show()
             self.settingsDialog.group_account.input_password.show()
+
+            # Hide the upload and clipboard configuration
+            self.settingsDialog.group_upload.hide()
+            self.settingsDialog.group_clipboard.hide()
         
         # Inject the default image title into the name field.
         self.settingsDialog.group_upload.input_name.setText(self.Format)
@@ -64,12 +68,13 @@ class Cloudup:
         self.Username = Settings.value("username", "")
         self.Password = Settings.value("password", "")
 
-        # Image title
+        # Image title and stream
+        self.Stream = Settings.value("stream", "")
         self.Format = Settings.value("name-format", "Screenshot at %H-%M-%S")
 
         # Clipboard
-        self.copyCloudup = Settings.value("copy-cloudup", "true") in ["true", True]
         self.copyDirect  = Settings.value("copy-direct", "true") in ["true", True]
+        self.copyCloudup = Settings.value("copy-cloudup", "true") in ["true", True]
         self.copyNothing = Settings.value("copy-nothing", "true") in ["true", True]
 
         Settings.endGroup()
@@ -81,6 +86,9 @@ class Cloudup:
         # Inject the image title format.
         self.settingsDialog.group_upload.input_name.connect("textChanged(QString)", self.nameFormatEdited)
         self.settingsDialog.connect("accepted()", self.saveSettings)
+
+        # Inject the upload stream
+        self.settingsDialog.group_upload.input_stream.text = self.Stream
 
         # Inject default values.
         self.loadSettings()
@@ -110,8 +118,9 @@ class Cloudup:
         Settings.setValue("username", self.settingsDialog.group_account.input_username.text)
         Settings.setValue("password", self.settingsDialog.group_account.input_password.text)
 
-        # Image title
+        # Image title and stream
         Settings.setValue("name-format", self.settingsDialog.group_upload.input_name.text)
+        Settings.setValue("stream", self.settingsDialog.group_upload.input_stream.text)
 
         # Clipboard
         Settings.setValue("copy-cloudup", not self.settingsDialog.group_clipboard.radio_cloudup.checked)
@@ -120,6 +129,9 @@ class Cloudup:
 
         Settings.endGroup()
         Settings.endGroup()
+
+        self.updateUi()
+        self.settingsDialog.open()
 
     # Login.
     def Login(self):
@@ -182,12 +194,18 @@ class Cloudup:
             FilePath = QStandardPaths.writableLocation(QStandardPaths.TempLocation) + "/" + ScreenCloud.formatFilename(str(time.time()))
             screenshot.save(QFile(FilePath), ScreenCloud.getScreenshotFormat())
 
-            # Create stream
-            s = requests.post("https://api.cloudup.com/1/streams?access_token=" + self.Key, data = {"title": name}, headers = Headers)
-            c = s.json()
+            # Has a stream been specified or should we create on?
+            if self.Stream:
+                Stream = self.Stream
+            else:
+                # Create stream
+                s = requests.post("https://api.cloudup.com/1/streams?access_token=" + self.Key, data = {"title": name}, headers = Headers)
+                c = s.json()
+
+                Stream = c["id"]
 
             # Create item inside the stream
-            i = requests.post("https://api.cloudup.com/1/items?access_token=" + self.Key, data = {"filename": FilePath, "stream_id": c["id"]}, headers = Headers)
+            i = requests.post("https://api.cloudup.com/1/items?access_token=" + self.Key, data = {"filename": FilePath, "stream_id": Stream}, headers = Headers)
             j = json.loads(i.text)
 
             # Upload
